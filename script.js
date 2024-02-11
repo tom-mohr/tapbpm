@@ -65,7 +65,16 @@ function clamp(x, a, b) {
 
 function dodgerblue(brightness) {
     brightness = clamp(brightness, 0, 1);
-    return `hsl(210, 100%, ${55 * brightness}%)`;
+    return `hsl(210, 100%, ${50 * brightness}%)`;
+}
+
+function textPink(brightness) {
+    if (prevTime !== -1) {
+        const time = new Date().getTime();
+        const diff = time - prevTime;
+        brightness += Math.exp(-2 * diff / 1000);
+    }
+    return `hsl(330, 100%, ${lerp(0, 50, brightness)}%)`;
 }
 
 function draw() {
@@ -98,11 +107,12 @@ function draw() {
                 const bpm = roundedBpm + i;
                 const fy = (bpm - minBpm) / (maxBpm - minBpm);
                 const y = canvas.height * (1 - fy);
-                ctx.strokeStyle = dodgerblue(1 / (Math.pow(i, 2) + 1));
+                ctx.strokeStyle = dodgerblue(0.5 / (Math.pow(i, 2) + 1));
                 ctx.setLineDash([]);
                 ctx.beginPath();
                 ctx.moveTo(0, y);
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 5;
+                ctx.lineCap = "round";
                 ctx.lineTo(canvas.width, y);
                 ctx.stroke();
             }
@@ -116,7 +126,8 @@ function draw() {
                 const fy = (bpm - minBpm) / (maxBpm - minBpm);
                 const x = canvas.width * fx;
                 const y = canvas.height * (1 - fy);
-                const color = dodgerblue(Math.exp(-2.5 * (bpms.length - i - 1) / bpms.length));
+                const t = (bpms.length - i - 1) / bpms.length;
+                const color = `hsl(${lerp(210, 90, t)}, 100%, 50%)`;
                 points.push({
                     x,
                     y,
@@ -140,6 +151,7 @@ function draw() {
                 ctx.moveTo(prevX, prevY);
                 ctx.setLineDash([10, 10]);
                 ctx.lineWidth = 5;
+                ctx.lineCap = "round";
                 ctx.lineTo(x, y);
                 ctx.stroke();
             }
@@ -155,22 +167,23 @@ function draw() {
 
             const fy = (smoothAvg - minBpm) / (maxBpm - minBpm);
             const y = canvas.height * (1 - fy);
-            ctx.strokeStyle = 'deeppink';
-            ctx.setLineDash([]);
+            ctx.strokeStyle = textPink(1);
+            ctx.setLineDash([10, 10]);
             ctx.beginPath();
             ctx.moveTo(0, y);
             ctx.lineWidth = 5;
+            ctx.lineCap = "round";
             ctx.lineTo(canvas.width, y);
             ctx.stroke();
         }
 
         // bpm text
-        ctx.fillStyle = 'deeppink';
+        ctx.fillStyle = textPink(1);
         ctx.font = 'italic bold 200px "Courier New"';
         ctx.fillText(`${roundedBpm}`, canvas.width / 2 - 50, canvas.height / 2);
     } else {
         // bpm text
-        ctx.fillStyle = 'deeppink';
+        ctx.fillStyle = textPink(1);
         ctx.font = `italic bold ${Math.round(150 + 50 * tapCounter)}px "Courier New"`;
         ctx.textAlign = "center";
         let text = "Tap";
