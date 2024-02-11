@@ -59,6 +59,15 @@ function lerp(a, b, t) {
     return a + (b - a) * t;
 }
 
+function clamp(x, a, b) {
+    return Math.max(a, Math.min(b, x));
+}
+
+function dodgerblue(brightness) {
+    brightness = clamp(brightness, 0, 1);
+    return `hsl(210, 100%, ${55 * brightness}%)`;
+}
+
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -84,6 +93,21 @@ function draw() {
 
         if (minBpm !== maxBpm) {
 
+            // grid lines
+            for (let i = -10; i <= 10; i++) {
+                const bpm = roundedBpm + i;
+                const fy = (bpm - minBpm) / (maxBpm - minBpm);
+                const y = canvas.height * (1 - fy);
+                ctx.strokeStyle = dodgerblue(1 / (Math.pow(i, 2) + 1));
+                ctx.setLineDash([]);
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineWidth = 2;
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            const points = [];
             let prevX;
             let prevY;
             for (let i = 0; i < bpms.length; i++) {
@@ -92,47 +116,52 @@ function draw() {
                 const fy = (bpm - minBpm) / (maxBpm - minBpm);
                 const x = canvas.width * fx;
                 const y = canvas.height * (1 - fy);
-                ctx.fillStyle = 'dodgerblue';
+                const color = dodgerblue(Math.exp(-2.5 * (bpms.length - i - 1) / bpms.length));
+                points.push({
+                    x,
+                    y,
+                    color
+                });
+                prevX = x;
+                prevY = y;
+            }
+
+            // history lines
+            for (let i = 1; i < points.length; i++) {
+                const {x, y, color} = points[i];
+                const {x: prevX, y: prevY, color: prevColor} = points[i - 1];
+
+                // linear gradient from start to end of line
+                const grad = ctx.createLinearGradient(prevX, prevY, x, y);
+                grad.addColorStop(0, prevColor);
+                grad.addColorStop(1, color);
+                ctx.strokeStyle = grad;
+                ctx.beginPath();
+                ctx.moveTo(prevX, prevY);
+                ctx.setLineDash([10, 10]);
+                ctx.lineWidth = 5;
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+
+            // history points
+            for (let i = 0; i < points.length; i++) {
+                const {x, y, color} = points[i];
+                ctx.fillStyle = color;
                 ctx.beginPath();
                 ctx.arc(x, y, 24, 0, 2 * Math.PI);
                 ctx.fill();
-
-                if (i !== 0) {
-                    // draw line from previous point
-                    ctx.strokeStyle = 'dodgerblue';
-                    ctx.beginPath();
-                    ctx.moveTo(prevX, prevY);
-                    ctx.lineWidth = 5;
-                    ctx.lineTo(x, y);
-                    ctx.stroke();
-                }
-                prevX = x;
-                prevY = y;
             }
 
             const fy = (smoothAvg - minBpm) / (maxBpm - minBpm);
             const y = canvas.height * (1 - fy);
             ctx.strokeStyle = 'deeppink';
-            ctx.setLineDash([10, 10]);
+            ctx.setLineDash([]);
             ctx.beginPath();
             ctx.moveTo(0, y);
             ctx.lineWidth = 5;
             ctx.lineTo(canvas.width, y);
             ctx.stroke();
-
-            // other bpm lines
-            for (let i = -10; i <= 10; i++) {
-                const bpm = roundedBpm + i;
-                const fy = (bpm - minBpm) / (maxBpm - minBpm);
-                const y = canvas.height * (1 - fy);
-                ctx.strokeStyle = 'dodgerblue';
-                ctx.setLineDash([10, 10]);
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineWidth = 0.5;
-                ctx.lineTo(canvas.width, y);
-                ctx.stroke();
-            }
         }
 
         // bpm text
@@ -145,9 +174,6 @@ function draw() {
         ctx.font = `italic bold ${Math.round(150 + 50 * tapCounter)}px "Courier New"`;
         ctx.textAlign = "center";
         let text = "Tap";
-        // for (let i = 0; i < tapCounter; i++) {
-        //     text += "!";
-        // }
         ctx.fillText(text, canvas.width / 2, canvas.height / 2);
     }
 
