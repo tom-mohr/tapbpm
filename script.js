@@ -215,3 +215,14 @@ try {
 
 // start drawing
 requestAnimationFrame(() => draw());
+
+// register service workers
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js')
+        .then(registration => {
+            console.log('Service Worker registriert mit Scope:', registration.scope);
+        })
+        .catch(error => {
+            console.log('Service Worker Registrierung fehlgeschlagen:', error);
+        });
+}
