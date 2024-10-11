@@ -220,9 +220,9 @@ requestAnimationFrame(() => draw());
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/service-worker.js')
         .then(registration => {
-            console.log('Service Worker registriert mit Scope:', registration.scope);
+            console.log('service worker registered with scope:', registration.scope);
         })
         .catch(error => {
-            console.log('Service Worker Registrierung fehlgeschlagen:', error);
+            console.log('service worker registration failed:', error);
         });
 }
