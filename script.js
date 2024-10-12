@@ -218,7 +218,7 @@ requestAnimationFrame(() => draw());
 
 // register service workers
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js')
+    navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
         .then(registration => {
             console.log('service worker registered with scope:', registration.scope);
         })

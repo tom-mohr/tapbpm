@@ -36,14 +36,20 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
     event.respondWith(
         caches.open(CACHE_NAME).then(cache => {
-            return cache.match(event.request).then(response => {
-                const fetchPromise = fetch(event.request).then(networkResponse => {
-                    // cache refresh
+            return cache.match(event.request).then(cachedResponse => {
+                const networkFetch = fetch(event.request).then(networkResponse => {
+                    // Update the cache with a clone of the network response
                     cache.put(event.request, networkResponse.clone());
                     return networkResponse;
+                }).catch(() => {
+                    // Network request failed; provide a fallback
+                    return caches.match('/index.html');
                 });
+                // Return cached response if available; otherwise, return the network response
+                return cachedResponse || networkFetch;
             });
         }).catch(() => {
+            // Failed to open cache; provide a fallback
             return caches.match('/index.html');
         })
     );
